@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 animate-fade">
+    <h1 class="text-3xl font-bold mb-6 text-center">Your Cart</h1>
+    
+    {% if order.items.all %}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Cart Items -->
+        <div class="lg:col-span-2">
+            <div class="card p-6">
+                <h2 class="text-xl font-semibold mb-4">Order Items</h2>
+                <div class="space-y-4">
+                    {% for item in order.items.all %}
+                    <div class="order-item py-4 flex justify-between items-center">
+                        <div class="flex items-center space-x-4">
+                            <div>
+                                <h3 class="font-medium text-lg">{{ item.menu_item.name }}</h3>
+                                <p class="text-gray-600 dark:text-gray-300 text-sm">{{ item.menu_item.restaurant.name }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center border rounded dark:border-gray-600">
+                                <button class="decrease-quantity px-3 py-1 text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700" 
+                                        data-item-id="{{ item.id }}">
+                                    -
+                                </button>
+                                <span class="px-3">{{ item.quantity }}</span>
+                                <button class="increase-quantity px-3 py-1 text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700" 
+                                        data-item-id="{{ item.id }}">
+                                    +
+                                </button>
+                            </div>
+                            <span class="font-medium">${{ item.price }}</span>
+                            <button class="remove-item text-red-500 hover:text-red-700 dark:hover:text-red-400"
+                                    data-item-id="{{ item.id }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div>
+            <div class="card p-6 sticky top-4">
+                <h2 class="text-xl font-semibold mb-4">Order Summary</h2>
+                <div class="space-y-2 mb-4">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600 dark:text-gray-300">Subtotal</span>
+                        <span>${{ order.total }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600 dark:text-gray-300">Delivery Fee</span>
+                        <span>$2.99</span>
+                    </div>
+                    <div class="border-t pt-2 flex justify-between font-bold dark:border-gray-600">
+                        <span>Total</span>
+                        <span>${{ order.total|add:2.99 }}</span>
+                    </div>
+                </div>
+                <button id="checkout-btn" class="w-full btn btn-primary py-3">
+                    Proceed to Checkout
+                </button>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card p-8 text-center">
+        <i class="fas fa-shopping-cart text-5xl text-gray-300 mb-4"></i>
+        <h2 class="text-xl font-semibold mb-2">Your cart is empty</h2>
+        <p class="text-gray-600 dark:text-gray-300 mb-4">Browse restaurants and add items to get started</p>
+        <a href="/" class="text-primary hover:underline">Explore Restaurants</a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Quantity adjustment
+    document.querySelectorAll('.decrease-quantity').forEach(button => {
+        button.addEventListener('click', function() {
+            updateQuantity(this.dataset.itemId, -1);
+        });
+    });
+
+    document.querySelectorAll('.increase-quantity').forEach(button => {
+        button.addEventListener('click', function() {
+            updateQuantity(this.dataset.itemId, 1);
+        });
+    });
+
+    // Remove item
+    document.querySelectorAll('.remove-item').forEach(button => {
+        button.addEventListener('click', function() {
+            removeItem(this.dataset.itemId);
+        });
+    });
+
+    // Checkout
+    document.getElementById('checkout-btn').addEventListener('click', checkout);
+
+    function updateQuantity(itemId, change) {
+        fetch(`/api/order-items/${itemId}/`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                quantity_change: change
+            })
+        })
+        .then(response => response.json())
+        .then(data => window.location.reload())
+        .catch(console.error);
+    }
+
+    function removeItem(itemId) {
+        fetch(`/api/order-items/${itemId}/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => window.location.reload())
+        .catch(console.error);
+    }
+
+    function checkout() {
+        fetch('/api/orders/{{ order.id }}/checkout/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => window.location.href = '/order-confirmation/')
+        .catch(console.error);
+    }
+});
+</script>
+{% endblock %}
