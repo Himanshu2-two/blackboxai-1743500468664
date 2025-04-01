@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6 text-center">Discover Restaurants</h1>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for restaurant in restaurants %}
+        <div class="card menu-item-card">
+            <img src="{{ restaurant.image_url }}" alt="{{ restaurant.name }}" 
+                 class="w-full h-48 object-cover">
+            <div class="p-6">
+                <h2 class="text-xl font-semibold mb-2">{{ restaurant.name }}</h2>
+                <p class="text-gray-600 dark:text-gray-300 mb-4">
+                    {{ restaurant.description|truncatechars:100 }}
+                </p>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ restaurant.address|truncatechars:30 }}
+                    </span>
+                    <a href="{% url 'restaurant-detail' restaurant.id %}" 
+                       class="btn btn-primary">
+                        View Menu
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-12">
+            <i class="fas fa-utensils text-5xl text-gray-300 mb-4"></i>
+            <p class="text-xl text-gray-500">No restaurants available yet</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
